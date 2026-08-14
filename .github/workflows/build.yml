@@ -79,7 +79,7 @@ jobs:
       - name: Compile Flutter iOS Release Payload
         run: flutter build ios --release --no-codesign
 
-      - name: Package & Codesign IPA Product
+      - name: Package & Codesign IPA Product with Entitlements
         run: |
           PROFILE_FILE="$RUNNER_TEMP/profile.mobileprovision"
           APP_PATH="$GITHUB_WORKSPACE/build/ios/iphoneos/Runner.app"
@@ -90,6 +90,11 @@ jobs:
             if [ -f "$PROFILE_FILE" ]; then
               cp "$PROFILE_FILE" "$APP_PATH/embedded.mobileprovision"
               echo "Successfully copied $PROFILE_FILE to $APP_PATH/embedded.mobileprovision"
+              
+              # 自动从 mobileprovision 中精准提取 Entitlements
+              security cms -D -i "$PROFILE_FILE" > $RUNNER_TEMP/profile_full.plist
+              plutil -extract Entitlements xml1 -o $RUNNER_TEMP/entitlements.plist $RUNNER_TEMP/profile_full.plist
+              echo "Extracted Entitlements successfully!"
             else
               echo "::error ::Provisioning Profile file not found at $PROFILE_FILE!"
               exit 1
@@ -99,7 +104,9 @@ jobs:
             if [ -n "$IDENTITY" ]; then
               echo "Codesigning Frameworks and Runner.app with Identity: $IDENTITY"
               find "$APP_PATH/Frameworks" -name "*.framework" -o -name "*.dylib" 2>/dev/null | xargs -I {} codesign --force --deep --sign "$IDENTITY" {} || true
-              codesign --force --deep --sign "$IDENTITY" "$APP_PATH"
+              
+              # 关键：签名可执行程序时带上精准的 --entitlements 属性
+              codesign --force --deep --sign "$IDENTITY" --entitlements $RUNNER_TEMP/entitlements.plist "$APP_PATH"
             else
               echo "::warning ::No Apple Distribution identity found in Keychain!"
             fi
