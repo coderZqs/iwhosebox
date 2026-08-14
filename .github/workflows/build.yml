@@ -47,7 +47,7 @@ jobs:
           path: build/web
 
   build-ios:
-    name: Build iOS Application
+    name: Build iOS IPA Package
     runs-on: macos-latest
     env:
       BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
@@ -90,29 +90,18 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build Signed IPA (If Certificate Configured)
-        if: ${{ env.BUILD_CERTIFICATE_BASE64 != '' && env.BUILD_PROVISION_PROFILE_BASE64 != '' }}
-        run: flutter build ipa --release --no-codesign || flutter build ipa --release
+      - name: Build iOS Application Payload
+        run: flutter build ios --release --no-codesign
 
-      - name: Build Unsigned IPA Fallback
-        if: ${{ env.BUILD_CERTIFICATE_BASE64 == '' || env.BUILD_PROVISION_PROFILE_BASE64 == '' }}
+      - name: Create IPA Package
         run: |
-          flutter build ios --release --no-codesign
           cd build/ios/iphoneos
           mkdir -p Payload
           cp -r Runner.app Payload/
-          zip -r ios-runner-unsigned.ipa Payload
+          zip -r iwhosebox-release.ipa Payload
 
-      - name: Upload iOS Signed IPA Artifact
-        if: ${{ env.BUILD_CERTIFICATE_BASE64 != '' && env.BUILD_PROVISION_PROFILE_BASE64 != '' }}
+      - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-ios-signed-ipa
-          path: build/ios/ipa/*.ipa
-
-      - name: Upload iOS Unsigned IPA Artifact
-        if: ${{ env.BUILD_CERTIFICATE_BASE64 == '' || env.BUILD_PROVISION_PROFILE_BASE64 == '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-ios-unsigned-ipa
-          path: build/ios/iphoneos/ios-runner-unsigned.ipa
+          name: release-ios-ipa
+          path: build/ios/iphoneos/iwhosebox-release.ipa
