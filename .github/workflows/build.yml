@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -33,7 +33,7 @@ jobs:
       - name: Disable Swift Package Manager (Prevent Duplicate Symbols Conflict)
         run: flutter config --no-enable-swift-package-manager
 
-      - name: Install Certificate into Keychain & Import Provisioning Profile by UUID
+      - name: Install Certificate into Keychain & Import Provisioning Profile
         run: |
           if [ -n "$BUILD_CERTIFICATE_BASE64" ]; then
             echo "Installing Certificate into Keychain..."
@@ -55,7 +55,7 @@ jobs:
           fi
 
           if [ -n "$BUILD_PROVISION_PROFILE_BASE64" ]; then
-            echo "Installing Provisioning Profile by UUID..."
+            echo "Installing Provisioning Profile..."
             mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
             echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > $RUNNER_TEMP/profile.mobileprovision
             
@@ -64,10 +64,6 @@ jobs:
             
             cp $RUNNER_TEMP/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
             cp $RUNNER_TEMP/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/comiwhoseboxrelease.mobileprovision
-
-            echo "PROVISIONING_PROFILE_SPECIFIER = $PROFILE_UUID" >> ios/Flutter/Release.xcconfig
-            echo "PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*] = $PROFILE_UUID" >> ios/Flutter/Release.xcconfig
-            echo "PROVISIONING_PROFILE = $PROFILE_UUID" >> ios/Flutter/Release.xcconfig
           else
             echo "::error ::BUILD_PROVISION_PROFILE_BASE64 secret is missing!"
             exit 1
@@ -80,37 +76,45 @@ jobs:
           pod repo update || true
           cd ..
 
-      - name: Build Official Signed IPA via Xcode Export
+      - name: Compile Flutter iOS Release Payload
+        run: flutter build ios --release --no-codesign
+
+      - name: Package & Codesign IPA Product
         run: |
-          mkdir -p output-ipa
+          PROFILES_DIR=~/Library/MobileDevice/Provisioning\ Profiles
+          PROFILE_FILE=$(ls $PROFILES_DIR/*.mobileprovision 2>/dev/null | head -n 1)
           
-          flutter build ipa --release --export-options-plist=ios/exportOptions.plist || {
-            echo "::warning ::flutter build ipa failed, executing fallback signing & payload packaging..."
-            flutter build ios --release --no-codesign
-            cp $RUNNER_TEMP/profile.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
+          APP_PATH="$GITHUB_WORKSPACE/build/ios/iphoneos/Runner.app"
+          OUTPUT_DIR="$GITHUB_WORKSPACE/output-ipa"
+          
+          if [ -d "$APP_PATH" ]; then
+            echo "Found Runner.app, embedding provisioning profile..."
+            cp "$PROFILE_FILE" "$APP_PATH/embedded.mobileprovision"
+            
             IDENTITY=$(security find-identity -v -p codesigning | grep -E "Apple Distribution|iPhone Distribution" | head -n 1 | awk -F '"' '{print $2}')
             if [ -n "$IDENTITY" ]; then
-              echo "Codesigning Frameworks and App with: $IDENTITY"
-              find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" 2>/dev/null | xargs -I {} codesign --force --deep --sign "$IDENTITY" {} || true
-              codesign --force --deep --sign "$IDENTITY" build/ios/iphoneos/Runner.app
+              echo "Codesigning Frameworks and Runner.app with Identity: $IDENTITY"
+              find "$APP_PATH/Frameworks" -name "*.framework" -o -name "*.dylib" 2>/dev/null | xargs -I {} codesign --force --deep --sign "$IDENTITY" {} || true
+              codesign --force --deep --sign "$IDENTITY" "$APP_PATH"
+            else
+              echo "::warning ::No Apple Distribution identity found in Keychain!"
             fi
-            cd build/ios/iphoneos
-            mkdir -p Payload
-            cp -r Runner.app Payload/
+            
+            mkdir -p "$OUTPUT_DIR/Payload"
+            cp -r "$APP_PATH" "$OUTPUT_DIR/Payload/"
+            cd "$OUTPUT_DIR"
             zip -r iwhosebox-release.ipa Payload
-            cd ../../..
-          }
-
-      - name: Collect Output IPA Files
-        run: |
-          mkdir -p output-ipa
-          echo "Searching for generated .ipa files..."
-          find build -name "*.ipa" -exec cp {} output-ipa/ \;
-          ls -la output-ipa/
+            rm -rf Payload
+            
+            echo "SUCCESS: Created $OUTPUT_DIR/iwhosebox-release.ipa"
+            ls -la "$OUTPUT_DIR"
+          else
+            echo "::error ::Runner.app does not exist at $APP_PATH!"
+            exit 1
+          fi
 
       - name: Upload iOS Signed IPA Artifact
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: release-ios-ipa
-          path: output-ipa/*.ipa
+          path: output-ipa/iwhosebox-release.ipa
