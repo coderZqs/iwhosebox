@@ -65,6 +65,7 @@ jobs:
             echo "Successfully created build/ios/iphoneos/Runner.app/embedded.mobileprovision"
           else
             echo "::error ::BUILD_PROVISION_PROFILE_BASE64 secret is missing or empty! Cannot create embedded.mobileprovision!"
+            exit 1
           fi
 
           IDENTITY=$(security find-identity -v -p codesigning | grep -E "Apple (Distribution|Development)" | head -n 1 | awk -F '"' '{print $2}')
@@ -73,6 +74,16 @@ jobs:
             codesign --force --deep --sign "$IDENTITY" build/ios/iphoneos/Runner.app || true
           else
             echo "::warning ::No codesigning identity found in Keychain. Signed with ad-hoc/unsigned."
+          fi
+
+      - name: Verify embedded.mobileprovision Exists
+        run: |
+          if [ -f "build/ios/iphoneos/Runner.app/embedded.mobileprovision" ]; then
+            echo "VERIFICATION SUCCESS: embedded.mobileprovision is present in Runner.app!"
+            ls -la build/ios/iphoneos/Runner.app/embedded.mobileprovision
+          else
+            echo "VERIFICATION FAILED: embedded.mobileprovision NOT FOUND!"
+            exit 1
           fi
 
       - name: Create IPA Package
