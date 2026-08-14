@@ -81,15 +81,19 @@ jobs:
 
       - name: Package & Codesign IPA Product
         run: |
-          PROFILES_DIR=~/Library/MobileDevice/Provisioning\ Profiles
-          PROFILE_FILE=$(ls $PROFILES_DIR/*.mobileprovision 2>/dev/null | head -n 1)
-          
+          PROFILE_FILE="$RUNNER_TEMP/profile.mobileprovision"
           APP_PATH="$GITHUB_WORKSPACE/build/ios/iphoneos/Runner.app"
           OUTPUT_DIR="$GITHUB_WORKSPACE/output-ipa"
           
           if [ -d "$APP_PATH" ]; then
             echo "Found Runner.app, embedding provisioning profile..."
-            cp "$PROFILE_FILE" "$APP_PATH/embedded.mobileprovision"
+            if [ -f "$PROFILE_FILE" ]; then
+              cp "$PROFILE_FILE" "$APP_PATH/embedded.mobileprovision"
+              echo "Successfully copied $PROFILE_FILE to $APP_PATH/embedded.mobileprovision"
+            else
+              echo "::error ::Provisioning Profile file not found at $PROFILE_FILE!"
+              exit 1
+            fi
             
             IDENTITY=$(security find-identity -v -p codesigning | grep -E "Apple Distribution|iPhone Distribution" | head -n 1 | awk -F '"' '{print $2}')
             if [ -n "$IDENTITY" ]; then
