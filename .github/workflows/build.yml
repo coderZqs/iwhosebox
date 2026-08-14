@@ -60,6 +60,22 @@ jobs:
       - name: Build iOS Application Payload
         run: flutter build ios --release --no-codesign
 
+      - name: Embed Provisioning Profile & Codesign App
+        run: |
+          PROFILES_DIR=~/Library/MobileDevice/Provisioning\ Profiles
+          PROFILE_FILE=$(ls $PROFILES_DIR/*.mobileprovision 2>/dev/null | head -n 1)
+
+          if [ -f "$PROFILE_FILE" ]; then
+            echo "Embedding Provisioning Profile..."
+            cp "$PROFILE_FILE" build/ios/iphoneos/Runner.app/embedded.mobileprovision
+          fi
+
+          IDENTITY=$(security find-identity -v -p codesigning | grep -E "Apple (Distribution|Development)" | head -n 1 | awk -F '"' '{print $2}')
+          if [ -n "$IDENTITY" ]; then
+            echo "Codesigning Runner.app with identity: $IDENTITY"
+            codesign --force --deep --sign "$IDENTITY" build/ios/iphoneos/Runner.app || true
+          fi
+
       - name: Create IPA Package
         run: |
           cd build/ios/iphoneos
