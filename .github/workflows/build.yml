@@ -33,7 +33,7 @@ jobs:
       - name: Disable Swift Package Manager (Prevent Duplicate Symbols Conflict)
         run: flutter config --no-enable-swift-package-manager
 
-      - name: Install Certificate into Keychain
+      - name: Install Certificate into Keychain & Import Provisioning Profile
         run: |
           if [ -n "$BUILD_CERTIFICATE_BASE64" ]; then
             echo "Installing Certificate into Keychain..."
@@ -45,7 +45,17 @@ jobs:
             security import $RUNNER_TEMP/build_certificate.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -A -T /usr/bin/codesign
             security list-keychains -s $KEYCHAIN_PATH
           else
-            echo "::warning ::BUILD_CERTIFICATE_BASE64 secret is missing or empty!"
+            echo "::error ::BUILD_CERTIFICATE_BASE64 secret is missing!"
+            exit 1
+          fi
+
+          if [ -n "$BUILD_PROVISION_PROFILE_BASE64" ]; then
+            echo "Installing Provisioning Profile..."
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/comiwhoseboxrelease.mobileprovision
+          else
+            echo "::error ::BUILD_PROVISION_PROFILE_BASE64 secret is missing!"
+            exit 1
           fi
 
       - name: Install Dependencies & Update CocoaPods
@@ -55,46 +65,11 @@ jobs:
           pod repo update || true
           cd ..
 
-      - name: Build iOS Application Payload
-        run: flutter build ios --release --no-codesign
+      - name: Build Official Signed IPA via Xcode Export
+        run: flutter build ipa --release --export-options-plist=ios/exportOptions.plist
 
-      - name: Force Embed Provisioning Profile & Codesign App
-        run: |
-          if [ -n "$BUILD_PROVISION_PROFILE_BASE64" ]; then
-            echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > build/ios/iphoneos/Runner.app/embedded.mobileprovision
-            echo "Successfully created build/ios/iphoneos/Runner.app/embedded.mobileprovision"
-          else
-            echo "::error ::BUILD_PROVISION_PROFILE_BASE64 secret is missing or empty! Cannot create embedded.mobileprovision!"
-            exit 1
-          fi
-
-          IDENTITY=$(security find-identity -v -p codesigning | grep -E "Apple (Distribution|Development)" | head -n 1 | awk -F '"' '{print $2}')
-          if [ -n "$IDENTITY" ]; then
-            echo "Codesigning Runner.app with identity: $IDENTITY"
-            codesign --force --deep --sign "$IDENTITY" build/ios/iphoneos/Runner.app || true
-          else
-            echo "::warning ::No codesigning identity found in Keychain. Signed with ad-hoc/unsigned."
-          fi
-
-      - name: Verify embedded.mobileprovision Exists
-        run: |
-          if [ -f "build/ios/iphoneos/Runner.app/embedded.mobileprovision" ]; then
-            echo "VERIFICATION SUCCESS: embedded.mobileprovision is present in Runner.app!"
-            ls -la build/ios/iphoneos/Runner.app/embedded.mobileprovision
-          else
-            echo "VERIFICATION FAILED: embedded.mobileprovision NOT FOUND!"
-            exit 1
-          fi
-
-      - name: Create IPA Package
-        run: |
-          cd build/ios/iphoneos
-          mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r iwhosebox-release.ipa Payload
-
-      - name: Upload iOS IPA Artifact
+      - name: Upload iOS Signed IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-ios-ipa
-          path: build/ios/iphoneos/iwhosebox-release.ipa
+          path: build/ios/ipa/*.ipa
