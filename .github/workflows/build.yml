@@ -59,12 +59,15 @@ jobs:
             mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
             echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > $RUNNER_TEMP/profile.mobileprovision
             
-            # 从文件提取真实 UUID 保持 Xcode 系统检索兼容
             PROFILE_UUID=$(security cms -D -i $RUNNER_TEMP/profile.mobileprovision | grep -A1 "<key>UUID</key>" | tail -n1 | sed -e 's/.*<string>\(.*\)<\/string>.*/\1/')
             echo "Extracted Provisioning Profile UUID: $PROFILE_UUID"
             
             cp $RUNNER_TEMP/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
             cp $RUNNER_TEMP/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/comiwhoseboxrelease.mobileprovision
+
+            echo "PROVISIONING_PROFILE_SPECIFIER = $PROFILE_UUID" >> ios/Flutter/Release.xcconfig
+            echo "PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*] = $PROFILE_UUID" >> ios/Flutter/Release.xcconfig
+            echo "PROVISIONING_PROFILE = $PROFILE_UUID" >> ios/Flutter/Release.xcconfig
           else
             echo "::error ::BUILD_PROVISION_PROFILE_BASE64 secret is missing!"
             exit 1
