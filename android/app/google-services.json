@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "517900350742",
+    "project_id": "iuwhosebox",
+    "storage_bucket": "iuwhosebox.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:517900350742:android:596d7010c39ab9d45e4c37",
+        "android_client_info": {
+          "package_name": "com.iuwhosebox.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDX2cLEMUgzS5nTboVmTyXXq6KgM_q9Vfs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,60 @@
+name: iwhosebox
+description: iwhosebox Wholesale - B2B Wholesale Shopping App
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI
+  cupertino_icons: ^1.0.6
+  flutter_staggered_grid_view: ^0.7.0
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  flutter_svg: ^2.0.9
+  
+  # Shopify Storefront API
+  graphql: ^5.2.0
+  http: ^1.2.0
+  
+  # Auth - Apple & Google Sign-In
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.0.0
+  
+  # Firebase - Push Notifications
+  firebase_core: ^2.27.0
+  firebase_messaging: ^14.7.19
+  firebase_auth: ^4.17.8
+  
+  # State Management & Storage
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+  
+  # WebView for Shopify Checkout
+  webview_flutter: ^4.7.0
+  
+  # Utilities
+  intl: ^0.19.0
+  url_launcher: ^6.2.4
+  
+  # Badge for cart
+  badges: ^3.1.2
+  
+  # Local notifications (for Firebase foreground messages)
+  flutter_local_notifications: ^17.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
