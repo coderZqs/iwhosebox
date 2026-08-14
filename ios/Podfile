@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-# platform :ios, '12.0'
+platform :ios, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -11,40 +11,21 @@ project 'Runner', {
 }
 
 def flutter_root
-def local_properties_path = File.join(__dir__, '..', 'local.properties')
-if File.exist?(local_properties_path)
-  File.open(local_properties_path, 'r') do |file|
-    file.each_line do |line|
-      if line =~ /^flutter\.sdk=(.*)$/
-        flutter_root = $1
-        break
-      end
-    end
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
   end
-end
-flutter_root ||= ENV['FLUTTER_ROOT']
 
-def parse_KV_file(file, separator='=')
-  file_abs_path = File.expand_path(file)
-  if !File.exists? file_abs_path
-    return [];
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
   end
-  generated_key_values = {}
-  skip_line_start_symbols = ["#", "/"]
-  File.foreach(file_abs_path) do |line|
-    next if skip_line_start_symbols.any? { |s| line =~ /^\s*#{s}/ }
-    plugin = line.split(pattern=separator)
-    if plugin.length == 2
-      podname = plugin[0].strip()
-      path = plugin[1].strip()
-      podpath = File.expand_path("#{path}", file_abs_path)
-      generated_key_values[podname] = podpath
-    else
-      puts "Invalid plugin specification: #{line}"
-    end
-  end
-  generated_key_values
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig and running flutter pub get"
 end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
