@@ -33,17 +33,23 @@ jobs:
       - name: Disable Swift Package Manager (Prevent Duplicate Symbols Conflict)
         run: flutter config --no-enable-swift-package-manager
 
-      - name: Install Certificate into Keychain & Import Provisioning Profile
+      - name: Install Certificate into Keychain & Set Default Search Path
         run: |
           if [ -n "$BUILD_CERTIFICATE_BASE64" ]; then
             echo "Installing Certificate into Keychain..."
             KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
             echo "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/build_certificate.p12
+            
             security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH || true
             security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
             security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-            security import $RUNNER_TEMP/build_certificate.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -A -T /usr/bin/codesign
-            security list-keychains -s $KEYCHAIN_PATH
+            
+            security import $RUNNER_TEMP/build_certificate.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -A -T /usr/bin/codesign -T /usr/bin/productsign
+            
+            # 设置为系统默认钥匙串并添加到搜索列表中，让 Xcode 自动化能直接找到证书
+            security default-keychain -s $KEYCHAIN_PATH
+            security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | tr -d '"')
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           else
             echo "::error ::BUILD_CERTIFICATE_BASE64 secret is missing!"
             exit 1
