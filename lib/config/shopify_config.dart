@@ -6,11 +6,8 @@ class ShopifyConfig {
   // Storefront API version
   static const String apiVersion = '2024-10';
   
-  // Public Storefront API Token (safe for app distribution, configure via env or replace)
-  static const String storefrontAccessToken = String.fromEnvironment(
-    'SHOPIFY_STOREFRONT_TOKEN',
-    defaultValue: 'YOUR_SHOPIFY_STOREFRONT_ACCESS_TOKEN',
-  );
+  // Public Storefront API Token (safe for app distribution)
+  static const String storefrontAccessToken = 'd4025a994be2e81f37b74454fe0dcb7e';
   
   // Admin API Token (server-side only, DO NOT commit real token to repo)
   static const String adminAccessToken = String.fromEnvironment(

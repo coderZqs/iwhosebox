@@ -48,11 +48,15 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	
+	<!-- Export Compliance (Auto exempt Apple encryption check) -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	
 	<!-- Firebase -->
 	<key>FirebaseMessagingAutoInitEnabled</key>
 	<false/>
 	
-	<!-- App Transport Security (allow cleartext for dev) -->
+	<!-- App Transport Security -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
