@@ -128,84 +128,276 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('iwhosebox'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => _showSearch(context),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          Consumer<CartModel>(
-            builder: (_, cart, __) => Badge(
-              label: Text('${cart.itemCount}'),
-              isLabelVisible: cart.itemCount > 0,
-              child: IconButton(
-                icon: const Icon(Icons.shopping_cart_outlined),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CartScreen()),
-                ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                children: [
+                  // Brand Logo
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.all_inbox_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'iwhosebox',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.6,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  // Compact Integrated Search Bar
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _showSearch(context),
+                      child: Container(
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF64748B),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _searchQuery.isNotEmpty
+                                    ? _searchQuery
+                                    : 'Search...',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: _searchQuery.isNotEmpty
+                                      ? const Color(0xFF0F172A)
+                                      : const Color(0xFF94A3B8),
+                                  fontWeight: _searchQuery.isNotEmpty
+                                      ? FontWeight.w500
+                                      : FontWeight.normal,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (_searchQuery.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  _onSearch('');
+                                },
+                                child: const Icon(
+                                  Icons.cancel_rounded,
+                                  color: Color(0xFF94A3B8),
+                                  size: 16,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Cart Button with Modern Badge
+                  Consumer<CartModel>(
+                    builder: (_, cart, __) => Material(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CartScreen()),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            alignment: Alignment.center,
+                            children: [
+                              const Icon(
+                                Icons.shopping_bag_outlined,
+                                color: Color(0xFF1E293B),
+                                size: 20,
+                              ),
+                              if (cart.itemCount > 0)
+                                Positioned(
+                                  top: -4,
+                                  right: -4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEF4444),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.white, width: 1.5),
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Text(
+                                      '${cart.itemCount}',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        height: 1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
       body: Column(
         children: [
-          // Collection chips
+          // Floating Collection Pills Bar
           if (_collections.isNotEmpty)
             Container(
-              height: 44,
-              margin: const EdgeInsets.only(top: 8),
+              height: 52,
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 itemCount: _collections.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    return _buildCollectionChip('All', null);
+                    return _buildCollectionPill('All', null);
                   }
                   final collection = _collections[index - 1];
-                  return _buildCollectionChip(
-                    collection['title'] as String? ?? '',
-                    collection['handle'] as String?,
+                  final rawTitle = collection['title'] as String? ?? '';
+                  final handle = collection['handle'] as String?;
+                  String title = rawTitle;
+                  if (title == '主页' || handle == 'frontpage' || title.contains('主页')) {
+                    title = 'Featured';
+                  } else if (RegExp(r'[\u4e00-\u9fa5]').hasMatch(title)) {
+                    if (handle != null && handle.isNotEmpty && !RegExp(r'[\u4e00-\u9fa5]').hasMatch(handle)) {
+                      title = handle.replaceAll('-', ' ').split(' ').map((s) => s.isNotEmpty ? '${s[0].toUpperCase()}${s.substring(1)}' : '').join(' ');
+                    } else {
+                      title = 'Collection';
+                    }
+                  }
+                  return _buildCollectionPill(
+                    title,
+                    handle,
                   );
                 },
               ),
             ),
-          const SizedBox(height: 4),
           // Product waterfall grid
           Expanded(
             child: _isLoading
                 ? _buildShimmerGrid()
                 : RefreshIndicator(
                     onRefresh: _loadData,
-                    child: MasonryGridView.count(
-                      controller: _scrollController,
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _products.length + (_isLoadingMore ? 4 : 0),
-                      itemBuilder: (context, index) {
-                        if (index >= _products.length) {
-                          return _buildShimmerCard();
-                        }
-                        final product = _products[index];
-                        return ProductCard(
-                          product: product,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ProductDetailScreen(
-                                handle: product.handle,
-                              ),
+                    color: const Color(0xFF2563EB),
+                    child: _products.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No products found',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
+                          )
+                        : MasonryGridView.count(
+                            controller: _scrollController,
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            itemCount: _products.length + (_isLoadingMore ? 4 : 0),
+                            itemBuilder: (context, index) {
+                              if (index >= _products.length) {
+                                return _buildShimmerCard();
+                              }
+                              final product = _products[index];
+                              return ProductCard(
+                                product: product,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ProductDetailScreen(
+                                      handle: product.handle,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
           ),
         ],
@@ -213,14 +405,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCollectionChip(String title, String? handle) {
+  Widget _buildCollectionPill(String title, String? handle) {
     final isSelected = _selectedCollection == handle;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(title),
-        selected: isSelected,
-        onSelected: (_) => _filterByCollection(handle),
+      child: GestureDetector(
+        onTap: () => _filterByCollection(handle),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            title,
+            style: TextStyle(
+              color: isSelected ? Colors.white : const Color(0xFF475569),
+              fontSize: 13,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -229,31 +445,60 @@ class _HomeScreenState extends State<HomeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
           left: 16,
           right: 16,
-          top: 16,
+          top: 20,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                const Text(
+                  'Search',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: _searchController,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Search products...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    Navigator.pop(context);
-                  },
-                ),
+                hintText: 'Search products by name or tag...',
+                hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF2563EB)),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: const Color(0xFFF1F5F9),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
               onSubmitted: (value) {
@@ -271,9 +516,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildShimmerGrid() {
     return MasonryGridView.count(
       crossAxisCount: 2,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      padding: const EdgeInsets.all(12),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       itemCount: 6,
       itemBuilder: (_, __) => _buildShimmerCard(),
     );
@@ -281,34 +526,72 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildShimmerCard() {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: Colors.grey[200]!,
+      highlightColor: Colors.grey[50]!,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFE2E8F0),
+            width: 0.8,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AspectRatio(
-              aspectRatio: 0.8,
-              child: Container(color: Colors.grey[300]),
+              aspectRatio: 1.0,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+              ),
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     height: 14,
-                    color: Colors.grey[300],
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Container(
                     height: 14,
-                    width: 80,
-                    color: Colors.grey[300],
+                    width: 90,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        height: 18,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      Container(
+                        height: 28,
+                        width: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
