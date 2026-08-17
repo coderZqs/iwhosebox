@@ -44,7 +44,7 @@ class AuthService {
   }
 
   /// Sign in with Apple
-  Future<UserCredential?> signInWithApple() async {
+  Future<AuthorizationCredentialAppleID> signInWithApple() async {
     try {
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -53,12 +53,20 @@ class AuthService {
         ],
       );
 
-      final oauthCredential = OAuthProvider("apple.com").credential(
-        idToken: appleCredential.identityToken,
-        accessToken: appleCredential.authorizationCode,
-      );
+      // 如果集成了 Firebase Auth，同步进行凭证交换
+      if (_auth != null) {
+        try {
+          final oauthCredential = OAuthProvider("apple.com").credential(
+            idToken: appleCredential.identityToken,
+            accessToken: appleCredential.authorizationCode,
+          );
+          await _auth?.signInWithCredential(oauthCredential);
+        } catch (e) {
+          // 容错捕获：即使 Firebase 离线，仍可获得 Apple 原生 AuthorizationCredential
+        }
+      }
 
-      return await _auth?.signInWithCredential(oauthCredential);
+      return appleCredential;
     } catch (e) {
       rethrow;
     }

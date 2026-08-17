@@ -32,8 +32,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithApple() async {
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithApple();
+      final credential = await _authService.signInWithApple();
       if (mounted) {
+        final name = credential.givenName ?? 'Apple User';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Welcome, $name!')),
+        );
         Navigator.pop(context, true);
       }
     } catch (e) {
