@@ -204,28 +204,55 @@ class CategoriesView extends StatefulWidget {
   State<CategoriesView> createState() => _CategoriesViewState();
 }
 
-class _CategoriesViewState extends State<CategoriesView> {
+class _CategoriesViewState extends State<CategoriesView> with WidgetsBindingObserver {
   final ShopifyService _shopifyService = ShopifyService();
   List<Map<String, dynamic>> _collections = [];
   bool _isLoading = true;
+  int _retryCount = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadCollections();
   }
 
-  Future<void> _loadCollections() async {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _collections.isEmpty && !_isLoading) {
+      _loadCollections();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _loadCollections({bool isSilentRetry = false}) async {
+    if (!isSilentRetry) {
+      setState(() => _isLoading = true);
+    }
     try {
       final collections = await _shopifyService.getCollections();
       if (mounted) {
         setState(() {
           _collections = collections;
           _isLoading = false;
+          _retryCount = 0;
         });
       }
     } catch (e) {
       if (mounted) {
+        if (_collections.isEmpty && _retryCount < 3) {
+          _retryCount++;
+          await Future.delayed(Duration(milliseconds: 1500 * _retryCount));
+          if (mounted && _collections.isEmpty) {
+            _loadCollections(isSilentRetry: true);
+            return;
+          }
+        }
         setState(() => _isLoading = false);
       }
     }

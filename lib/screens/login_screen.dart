@@ -36,15 +36,28 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         final name = credential.givenName ?? 'Apple User';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Welcome, $name!')),
+          SnackBar(
+            content: Text('Welcome, $name!'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Apple Sign-In failed: $e')),
-        );
+        final errorStr = e.toString();
+        // 如果是用户点击了取消
+        if (errorStr.contains('canceled') || errorStr.contains('AuthorizationErrorCode.canceled')) {
+          // 用户取消登录，不弹错误提示
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Apple Sign-In failed: $e'),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     }
     if (mounted) setState(() => _isLoading = false);

@@ -17,7 +17,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final ShopifyService _shopifyService = ShopifyService();
   final ScrollController _scrollController = ScrollController();
 
@@ -25,21 +25,32 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _collections = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
-  bool _hasMore = true;
-  String? _endCursor;
+  final bool _hasMore = true;
+  final String? _endCursor = null;
   String? _selectedCollection;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  int _retryCount = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
     _scrollController.addListener(_onScroll);
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 当 App 从系统授权弹窗或后台切回前台时，如果数据为空自动重新拉取
+    if (state == AppLifecycleState.resumed && _products.isEmpty && !_isLoading) {
+      _loadData();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -52,7 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool isSilentRetry = false}) async {
+    if (!isSilentRetry) {
+      setState(() => _isLoading = true);
+    }
     try {
       final results = await Future.wait([
         _shopifyService.getProducts(),
@@ -63,14 +77,21 @@ class _HomeScreenState extends State<HomeScreen> {
           _products = results[0] as List<Product>;
           _collections = results[1] as List<Map<String, dynamic>>;
           _isLoading = false;
+          _retryCount = 0;
         });
       }
     } catch (e) {
       if (mounted) {
+        // 如果首次加载遇到网络不可达（如 iOS 蜂窝网络弹窗尚未点击授权），自动延迟重试最多3次
+        if (_products.isEmpty && _retryCount < 3) {
+          _retryCount++;
+          await Future.delayed(Duration(milliseconds: 1500 * _retryCount));
+          if (mounted && _products.isEmpty) {
+            _loadData(isSilentRetry: true);
+            return;
+          }
+        }
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load products: $e')),
-        );
       }
     }
   }

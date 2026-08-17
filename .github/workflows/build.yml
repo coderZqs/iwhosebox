@@ -94,7 +94,14 @@ jobs:
               # 自动从 mobileprovision 中精准提取 Entitlements
               security cms -D -i "$PROFILE_FILE" > $RUNNER_TEMP/profile_full.plist
               plutil -extract Entitlements xml1 -o $RUNNER_TEMP/entitlements.plist $RUNNER_TEMP/profile_full.plist
-              echo "Extracted Entitlements successfully!"
+              
+              # 确保写入 Sign In with Apple 权限
+              /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin array" $RUNNER_TEMP/entitlements.plist 2>/dev/null || true
+              /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin:0 string Default" $RUNNER_TEMP/entitlements.plist 2>/dev/null || true
+              
+              echo "--- Extracted & Injected Entitlements ---"
+              cat $RUNNER_TEMP/entitlements.plist
+              echo "----------------------------------------"
             else
               echo "::error ::Provisioning Profile file not found at $PROFILE_FILE!"
               exit 1
