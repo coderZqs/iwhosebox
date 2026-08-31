@@ -13,6 +13,7 @@ import 'widgets/product_card.dart';
 import 'screens/product_detail_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/cart_screen.dart';
+import 'screens/profile_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
