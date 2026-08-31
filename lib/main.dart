@@ -13,11 +13,14 @@ import 'widgets/product_card.dart';
 import 'screens/product_detail_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/cart_screen.dart';
-import 'screens/profile_screen.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize local auth session storage
+  await AuthService().init();
+
   // Run app immediately to show UI without waiting for network/Firebase
   runApp(const IWhoseboxApp());
 
@@ -43,8 +46,11 @@ class IWhoseboxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => CartModel(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartModel()),
+        ChangeNotifierProvider.value(value: AuthService()),
+      ],
       child: MaterialApp(
         title: 'iwhosebox',
         debugShowCheckedModeBanner: false,

@@ -112,48 +112,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = _authService.isLoggedIn;
+    return AnimatedBuilder(
+      animation: _authService,
+      builder: (context, _) {
+        final isLoggedIn = _authService.isLoggedIn;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-        title: const Text(
-          'Account',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Settings',
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.settings_outlined,
-                color: Color(0xFF334155),
-                size: 20,
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: false,
+            title: const Text(
+              'Account',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                color: Color(0xFF0F172A),
               ),
             ),
-            onPressed: _openSettings,
+            actions: [
+              IconButton(
+                tooltip: 'Settings',
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.settings_outlined,
+                    color: Color(0xFF334155),
+                    size: 20,
+                  ),
+                ),
+                onPressed: _openSettings,
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: isLoggedIn ? _buildLoggedInView() : _buildLoggedOutView(),
-      ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: isLoggedIn ? _buildLoggedInView() : _buildLoggedOutView(),
+          ),
+        );
+      },
     );
   }
 
@@ -768,7 +773,7 @@ For questions regarding these terms, contact legal@iwhosebox.com.
                 const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF1F5F9)),
                 const ListTile(
                   title: Text('App Version', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  trailing: Text('v1.0.0 (104)', style: TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                  trailing: Text('v1.0.0 (105)', style: TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
