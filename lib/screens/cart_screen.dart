@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/cart.dart';
+import '../services/navigation_service.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
@@ -143,7 +144,7 @@ class CartScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => AppNavigation.goToShop(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2563EB),
                             foregroundColor: Colors.white,

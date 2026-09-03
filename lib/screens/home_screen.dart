@@ -393,7 +393,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           )
                         : MasonryGridView.count(
                             controller: _scrollController,
-                            crossAxisCount: 2,
+                            crossAxisCount: MediaQuery.of(context).size.width >= 900
+                                ? 4
+                                : (MediaQuery.of(context).size.width >= 600 ? 3 : 2),
                             mainAxisSpacing: 12,
                             crossAxisSpacing: 12,
                             padding: const EdgeInsets.symmetric(

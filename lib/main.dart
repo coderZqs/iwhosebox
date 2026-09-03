@@ -15,6 +15,7 @@ import 'screens/home_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/profile_screen.dart';
 import 'services/auth_service.dart';
+import 'services/navigation_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -143,6 +144,27 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = AppNavigation.currentTab.value;
+    AppNavigation.currentTab.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (mounted && _currentIndex != AppNavigation.currentTab.value) {
+      setState(() {
+        _currentIndex = AppNavigation.currentTab.value;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    AppNavigation.currentTab.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
   final List<Widget> _screens = [
     const HomeScreen(),
     const CategoriesView(),
@@ -173,7 +195,7 @@ class _MainShellState extends State<MainShell> {
           elevation: 0,
           selectedIndex: _currentIndex,
           onDestinationSelected: (index) {
-            setState(() => _currentIndex = index);
+            AppNavigation.switchToTab(index);
           },
           destinations: const [
             NavigationDestination(
@@ -311,8 +333,10 @@ class _CategoriesViewState extends State<CategoriesView> with WidgetsBindingObse
                     )
                   : GridView.builder(
                       padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width >= 900
+                            ? 4
+                            : (MediaQuery.of(context).size.width >= 600 ? 3 : 2),
                         crossAxisSpacing: 14,
                         mainAxisSpacing: 14,
                         childAspectRatio: 1.1,
@@ -603,7 +627,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                     )
                   : MasonryGridView.count(
                       controller: _scrollController,
-                      crossAxisCount: 2,
+                      crossAxisCount: MediaQuery.of(context).size.width >= 900
+                          ? 4
+                          : (MediaQuery.of(context).size.width >= 600 ? 3 : 2),
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
                       padding: const EdgeInsets.symmetric(
@@ -632,7 +658,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
 
   Widget _buildShimmerGrid() {
     return MasonryGridView.count(
-      crossAxisCount: 2,
+      crossAxisCount: MediaQuery.of(context).size.width >= 900
+          ? 4
+          : (MediaQuery.of(context).size.width >= 600 ? 3 : 2),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

@@ -16,6 +16,10 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   late final String _cartUrl;
+  WebViewController? _webViewController;
+  bool _isLoading = true;
+  double _progress = 0.0;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -25,6 +29,53 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return '$variantId:${item.quantity}';
     }).toList();
     _cartUrl = '${ShopifyConfig.storeUrl}/cart/${items.join(',')}';
+
+    if (!kIsWeb) {
+      _initWebViewController();
+    }
+  }
+
+  void _initWebViewController() {
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            if (mounted) {
+              setState(() {
+                _progress = progress / 100.0;
+              });
+            }
+          },
+          onPageStarted: (String url) {
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+                _errorMessage = null;
+              });
+            }
+          },
+          onPageFinished: (String url) {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+          },
+          onWebResourceError: (WebResourceError error) {
+            if (mounted) {
+              // 忽略取消类非致命错误
+              if (error.errorType != WebResourceErrorType.webContentProcessTerminated) {
+                setState(() {
+                  _isLoading = false;
+                  _errorMessage = 'Failed to load checkout page. Please check your connection and try again.';
+                });
+              }
+            }
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(_cartUrl));
   }
 
   @override
@@ -134,10 +185,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildMobileWebView() {
-    final controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse(_cartUrl));
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -157,7 +204,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               size: 16,
             ),
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () async {
+            if (_webViewController != null && await _webViewController!.canGoBack()) {
+              await _webViewController!.goBack();
+            } else {
+              if (mounted) Navigator.pop(context);
+            }
+          },
         ),
         title: const Text(
           'Checkout',
@@ -168,8 +221,59 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             color: Color(0xFF0F172A),
           ),
         ),
+        bottom: _isLoading
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(2.5),
+                child: LinearProgressIndicator(
+                  value: _progress > 0 ? _progress : null,
+                  backgroundColor: Colors.transparent,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                  minHeight: 2.5,
+                ),
+              )
+            : null,
       ),
-      body: WebViewWidget(controller: controller),
+      body: Stack(
+        children: [
+          if (_webViewController != null)
+            WebViewWidget(controller: _webViewController!),
+          if (_errorMessage != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.wifi_off_rounded, size: 56, color: Color(0xFF94A3B8)),
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.4),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _errorMessage = null;
+                          _isLoading = true;
+                        });
+                        _webViewController?.reload();
+                      },
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: const Text('Retry Checkout'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
